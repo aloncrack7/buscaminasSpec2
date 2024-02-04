@@ -140,7 +140,9 @@ impl Tablero{
         }
     }
 
-    fn hacer_visible(&mut self, fila: usize, columna: usize){
+    fn hacer_visible(&mut self, fila: usize, columna: usize) -> Vec<(usize, usize)>{
+        let mut resultado=vec![(fila, columna)];
+
         self.tablero_visible[fila][columna] = 1;
         self.casillas_descubiertas += 1;
 
@@ -153,7 +155,7 @@ impl Tablero{
 
                         if fila>=0 && fila<self.filas && columna>=0 && columna<self.columnas{
                             if self.tablero_visible[fila as usize][columna as usize] == 0{
-                                self.hacer_visible(fila as usize, columna as usize);
+                                resultado.append(&mut self.hacer_visible(fila as usize, columna as usize));
                             }
                         }
                     }
@@ -170,10 +172,10 @@ impl Tablero{
                     }
                 }
             }
-        }else {
-            if self.casillas_descubiertas==(self.filas*self.columnas) as i32 -self.minas{
-                self.estado=EstadoPartida::Ganada;
-            }
+        }else if self.casillas_descubiertas==(self.filas*self.columnas) as i32 -self.minas{
+            self.estado=EstadoPartida::Ganada;
         }
+
+        resultado
     }
 }
