@@ -1,18 +1,23 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Write};
 
+use crate::buscaminas::Tablero;
+mod buscaminas;
+
 fn handle_client(mut stream: TcpStream) {
-    loop {
+    let mut terminado=false;
+
+    while !terminado {
         let mut buffer = [0; 1];
         match stream.read(&mut buffer) {
             Ok(n) => {
                 if n == 0 {
-                    break;
+                    terminado=true;
                 }
 
                 match buffer[0] {
                     b'0'=>{
-                        break;
+                        terminado=true;
                     }
                     b'1'=>{
                         medio(&mut stream);
@@ -21,31 +26,84 @@ fn handle_client(mut stream: TcpStream) {
                         dificil(&mut stream);
                     }
                     b'3'=>{
-                        ia(&mut stream);
+                        ia();
                     }
                     _ =>{
-                        break;
+                        terminado=true;
                     }
                 }
             }
             Err(e) => {
                 eprintln!("Failed to read from connection: {}", e);
-                break;
+                terminado=true;
             }
         }
     }
+
+    println!("Connection closed");
 }
 
 fn medio(stream: &mut TcpStream){
     println!("Medio");
+
+    let mut tablero = 
+        buscaminas::Tablero::new(16, 16, 40);
+
+    jugar(stream, &mut tablero);
 }
 
 fn dificil(stream: &mut TcpStream){
     println!("Dificil");
+
+    let mut tablero = 
+        buscaminas::Tablero::new(30, 16, 99);
+
+    jugar(stream, &mut tablero);
 }
 
-fn ia(stream: &mut TcpStream){
+fn ia(){
     println!("IA");
+
+    let mut tablero = 
+        buscaminas::Tablero::new(30, 16, 99);
+}
+
+fn jugar(stream: &mut TcpStream, tablero: &mut buscaminas::Tablero){
+    let mut terminado=false;
+
+    while !terminado{
+        let mut buffer = [0; 3];
+
+        match stream.read(&mut buffer) {
+            Ok(n) => {
+                if n == 0 {
+                    terminado=true;
+                }
+
+                let fila = buffer[0] as i32;
+                if fila==-1{
+                    terminado=true;
+                }else{
+                    let fila = fila as usize;
+
+                    let columna = buffer[1] as usize;
+                    let accion = buffer[2];
+
+                    if accion==b'0'{
+                        tablero.descubrir_casilla(fila, columna);
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to read from connection: {}", e);
+                terminado=true;
+            }
+            
+        }
+
+        terminado=terminado || tablero.get_estado()==buscaminas::EstadoPartida::Ganada || 
+            tablero.get_estado()==buscaminas::EstadoPartida::Perdida;
+    }
 }
 
 fn main() {
