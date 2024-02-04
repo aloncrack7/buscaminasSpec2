@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  backend:
+    image: rust:latest
+    container_name: backend
+    working_dir: /usr/src/backend
+    volumes:
+      - ./buscaminasBackend:/usr/src/backend
+    ports:
+      - "7070:7070"
+    command: cargo run --release

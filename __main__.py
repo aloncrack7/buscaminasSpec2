@@ -1,21 +1,16 @@
-import os
-import platform
 import socket
 
 from gui.gui import *
 
-# def createSocket():
-#     s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     s.bind(('localhost', 7070))
+def createSocket():
+    client=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect(('localhost', 7070))
     
+    return client    
 
 def main():
-    if platform.system() == "Windows":
-        os.system(".\\buscaminasBackend\\target\\release\\buscaminasBackend.exe")
-    else:
-        os.system("./buscaminasBackend/target/release/buscaminasBackend")
-        
-    createWindow()
+    gui=Gui(createSocket())
+    gui.createWindow()
     
 if __name__ == "__main__":
     main()
