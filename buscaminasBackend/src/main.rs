@@ -16,17 +16,18 @@ fn handle_client(mut stream: TcpStream) {
                     terminado=true;
                 }
 
-                match buffer[0] {
-                    b'0'=>{
+                let opcion=buffer[0] as i8;
+                match opcion {
+                    -1=>{
                         terminado=true;
                     }
-                    b'1'=>{
+                    1=>{
                         medio(&mut stream);
                     }
-                    b'2'=>{
+                    2=>{
                         dificil(&mut stream);
                     }
-                    b'3'=>{
+                    3=>{
                         ia();
                     }
                     _ =>{

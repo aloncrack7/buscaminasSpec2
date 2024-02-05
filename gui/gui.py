@@ -1,5 +1,15 @@
 import tkinter as tk
 import socket
+from enum import Enum
+
+class Opciones(Enum):
+    MEDIO=1
+    DIFICIL=2
+    IA=3
+    SALIR=-1
+    
+    def encodeOption(self) -> bytes:
+        return self.value.to_bytes(1, byteorder='big', signed=True)
 
 class Gui:
     socketCliente: socket.socket
@@ -27,18 +37,18 @@ class Gui:
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)  # Bind the function to window close event
 
         self.window.mainloop()
-
+    
     def medio(self):
-        self.socketCliente.send(b'1')
+        self.socketCliente.send(Opciones.MEDIO.encodeOption())
         
     def dificil(self):
-        self.socketCliente.send(b'2')
+        self.socketCliente.send(Opciones.DIFICIL.encodeOption())
         
     def ia(self):
-        self.socketCliente.send(b'3') 
+        self.socketCliente.send(Opciones.IA.encodeOption()) 
 
     def on_closing(self):
-        self.socketCliente.send(b'0')  
+        self.socketCliente.send(Opciones.SALIR.encodeOption())  
         self.window.destroy()
 
     
