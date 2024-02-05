@@ -1,7 +1,8 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Write};
+use std::thread;
 
-use crate::buscaminas::Tablero;
+// use crate::buscaminas::Tablero;
 mod buscaminas;
 
 fn handle_client(mut stream: TcpStream) {
@@ -114,7 +115,7 @@ fn main() {
         match stream {
             Ok(stream) => {
                 println!("Connection established!");
-                std::thread::spawn(|| {
+                thread::spawn(|| {
                     handle_client(stream);
                 });
             }
