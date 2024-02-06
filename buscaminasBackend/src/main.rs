@@ -82,16 +82,16 @@ fn jugar(stream: &mut TcpStream, tablero: &mut buscaminas::Tablero){
                     terminado=true;
                 }
 
-                let fila = buffer[0] as i32;
+                let fila = buffer[0] as i8;
                 if fila==-1{
                     terminado=true;
                 }else{
                     let fila = fila as usize;
 
-                    let columna = buffer[1] as usize;
-                    let accion = buffer[2];
+                    let columna = buffer[1] as i8 as usize;
+                    let accion = buffer[2] as i8;
 
-                    if accion==b'0'{
+                    if accion==0{
                         tablero.descubrir_casilla(fila, columna);
                     }
                 }
