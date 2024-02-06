@@ -10,7 +10,6 @@ def createSocket():
 
 def main():
     gui=Gui(createSocket())
-    gui.createWindow()
     
 if __name__ == "__main__":
     main()
