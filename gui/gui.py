@@ -15,6 +15,7 @@ class Gui:
     def __init__(self, socket):
         self.window = tk.Tk()
         self.socketCliente=socket
+        self.buttons=[]
 
         self.difficultyWindow()
 
@@ -57,11 +58,11 @@ class Gui:
         self.window.destroy()
 
         # Crear la ventana del juego con el tablero de botones
-        game_window = tk.Tk()
-        game_window.title("Buscaminas")
-        game_window.geometry("1000x800")
+        self.game_window = tk.Tk()
+        self.game_window.title("Buscaminas")
+        self.game_window.geometry("1000x800")
 
-        btns_frame=tk.Frame(game_window)
+        btns_frame=tk.Frame(self.game_window)
         btns_frame.pack()
         for i in range(numFilas):
             row_buttons = []
@@ -72,14 +73,37 @@ class Gui:
                 row_buttons.append(btn)
             self.buttons.append(row_buttons)
 
-        game_window.protocol("WM_DELETE_WINDOW", self.on_closing_game)
-        game_window.mainloop()
+        self.game_window.protocol("WM_DELETE_WINDOW", self.on_game_window_closing)
+        self.game_window.mainloop()
 
-    # TODO Funcion botones
     def button_click(self, row, col):
-        # position = (row, col)
-        # self.socketCliente.send(position)  # Ajusta esto según tus necesidades
         print(f"Botón izquierdo en la posición ({row}, {col})")
+        opcion=0
+        self.socketCliente.send(opcion.to_bytes(1, byteorder='big', signed=True))
+        self.socketCliente.send(row.to_bytes(1, byteorder='big', signed=False))
+        self.socketCliente.send(col.to_bytes(1, byteorder='big', signed=False))
+
+        numDescubiertos=int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=False)
+        print(f"numDescubiertos: {numDescubiertos}")
+
+        for i in range(0, numDescubiertos):
+            fila = int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=False)
+            columna = int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=False)
+            valor = int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=True)
+
+            self.buttons[fila][columna]['text']=str(valor)
+
+            print(f"Fila: {fila}")
+            print(f"Columna: {columna}")
+            print(f"Valor: {valor}")
 
     def right_click(self, event, row, col):
         print(f"Botón derecho en la posición ({row}, {col})")
+        opcion=1
+        self.socketCliente.send(opcion.to_bytes(1, byteorder='big', signed=True))
+        self.socketCliente.send(row.to_bytes(1, byteorder='big', signed=False))
+        self.socketCliente.send(col.to_bytes(1, byteorder='big', signed=False))
+
+    def on_game_window_closing(self):
+        self.socketCliente.send(Opciones.SALIR.encodeOption())  
+        self.game_window.destroy()

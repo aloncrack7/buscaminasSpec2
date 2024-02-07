@@ -12,12 +12,23 @@ pub struct Tablero{
     filas: isize,
     columnas: isize,
     minas: i32,
-    tablero: Vec<Vec<i32>>,
-    tablero_visible: Vec<Vec<i32>>,
-    minas_cercanas: Vec<Vec<i32>>,
-    minas_encontradas: i32,
+    tablero: Vec<Vec<i8>>,
+    tablero_visible: Vec<Vec<bool>>,
     casillas_descubiertas: i32,
     estado: EstadoPartida,
+}
+
+impl std::fmt::Display for Tablero {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for fila in &self.tablero{
+            for casilla in fila{
+                write!(f, "{}", casilla)?;
+            }
+            writeln!(f)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl Tablero{
@@ -27,9 +38,7 @@ impl Tablero{
             columnas: columnas as isize,
             minas: minas,
             tablero: vec![vec![0; columnas]; filas],
-            tablero_visible: vec![vec![0; columnas]; filas],
-            minas_cercanas: vec![vec![0; columnas]; filas],
-            minas_encontradas: 0,
+            tablero_visible: vec![vec![false; columnas]; filas],
             casillas_descubiertas: 0,
             estado: EstadoPartida::SinIniciar,
         };
@@ -59,16 +68,16 @@ impl Tablero{
     fn generar_minas_cercanas(&mut self){
         for i in 0..self.filas{
             for j in 0..self.columnas{
-                if self.tablero[i as usize][j as usize] == -1{
+                if self.tablero[i as usize][j as usize] != -1{
                     for k in -1..2{
                         for l in -1..2{
-                            if i!=0 || k!=0{
+                            if !(k==0 && l==0){
                                 let fila: isize = i+k;
                                 let columna: isize = j+l;
 
                                 if fila>= 0 && fila<self.filas && columna>=0 && columna<self.columnas{
                                     if self.tablero[fila as usize][columna as usize] == -1{
-                                        self.tablero[fila as usize][columna as usize] += 1;
+                                        self.tablero[i as usize][j as usize] += 1;
                                     }
                                 }
                             }
@@ -79,7 +88,7 @@ impl Tablero{
         }
     }
 
-    pub fn descubrir_casilla(&mut self, fila: usize, columna: usize){
+    pub fn descubrir_casilla(&mut self, fila: usize, columna: usize) -> Vec<(u8, u8, i8)>{
         if self.estado.eq(&EstadoPartida::SinIniciar){
             self.descubrir_casilla_primera_ronda(fila, columna);
         }else{
@@ -88,14 +97,14 @@ impl Tablero{
             }
         }
 
-        self.hacer_visible(fila, columna);
+        self.hacer_visible(fila, columna)
     }
 
     fn descubrir_casilla_primera_ronda(&mut self, fila: usize, columna: usize){
         self.estado = EstadoPartida::Jugando;
 
         if self.tablero[fila][columna] == -1{
-            self.tablero[fila][columna] = 0;
+            let mut contador: i8=0;
             for i in -1..2{
                 for j in -1..2{
                     if i!=0 || j!=0{
@@ -105,22 +114,28 @@ impl Tablero{
                         if fila>=0 && fila<self.filas && columna>=0 && columna<self.columnas{
                             if self.tablero[fila as usize][columna as usize]!=-1{
                                 self.tablero[fila as usize][columna as usize]-=1;
+                            }else{
+                                contador+=1;
                             }
                         }
                     }
                 }
             }
+
+            self.tablero[fila][columna]=contador;
         }
 
         let mut colocado=false;
         while !colocado {
             let mut rng = rand::thread_rng();
-            let fila = rng.gen_range(0..self.filas);
-            let columna = rng.gen_range(0..self.columnas);
-            if self.tablero[fila as usize][columna as usize]!=-1{
+            let filaAntes=fila;
+            let fila = rng.gen_range(0..self.filas) as usize;
+            let columnaAntes=columna;
+            let columna = rng.gen_range(0..self.columnas) as usize;
+            if (fila!=filaAntes && columna!=columnaAntes) && self.tablero[fila][columna]!=-1{
                 colocado=true;
 
-                self.tablero[fila as usize][columna as usize] = -1;
+                self.tablero[fila][columna] = -1;
 
                 for i in -1..2{
                     for j in -1..2{
@@ -129,7 +144,7 @@ impl Tablero{
                             let columna: isize = (columna as isize)+j;
 
                             if fila>=0 && fila<self.filas && columna>=0 && columna<self.columnas{
-                                if self.tablero[fila as usize][columna as usize]==-1{
+                                if self.tablero[fila as usize][columna as usize]!=-1{
                                     self.tablero[fila as usize][columna as usize]+=1;
                                 }
                             }
@@ -140,10 +155,14 @@ impl Tablero{
         }
     }
 
-    fn hacer_visible(&mut self, fila: usize, columna: usize) -> Vec<(usize, usize)>{
-        let mut resultado=vec![(fila, columna)];
+    fn hacer_visible(&mut self, fila: usize, columna: usize) -> Vec<(u8, u8, i8)>{
+        if self.tablero_visible[fila][columna]{
+            return vec![];
+        }
 
-        self.tablero_visible[fila][columna] = 1;
+        let mut resultado=vec![(fila as u8, columna as u8, self.tablero[fila][columna])];
+
+        self.tablero_visible[fila][columna] = true;
         self.casillas_descubiertas += 1;
 
         if self.tablero[fila][columna]==0{
@@ -154,26 +173,33 @@ impl Tablero{
                         let columna: isize = (columna as isize)+j;
 
                         if fila>=0 && fila<self.filas && columna>=0 && columna<self.columnas{
-                            if self.tablero_visible[fila as usize][columna as usize] == 0{
-                                resultado.append(&mut self.hacer_visible(fila as usize, columna as usize));
-                            }
+                            resultado.append(&mut self.hacer_visible(fila as usize, columna as usize));
                         }
                     }
                 }
             }
         }else if self.estado.eq(&EstadoPartida::Perdida){
+            let mut resultado: Vec<(u8, u8, i8)>=vec![];
+
             for i in 0..self.filas{
                 for j in 0..self.columnas{
-                    let i = i as usize;
-                    let j = j as usize;
-
-                    if self.tablero[i][j]==-1{
-                        self.tablero_visible[i][j]=1;
+                    if !self.tablero_visible[i as usize][j as usize]{
+                        resultado.push((i as u8, j as u8, self.tablero[i as usize][j as usize]));
                     }
                 }
             }
+
+            return resultado;
         }else if self.casillas_descubiertas==(self.filas*self.columnas) as i32 -self.minas{
             self.estado=EstadoPartida::Ganada;
+
+            for i in 0..self.filas{
+                for j in 0..self.columnas{
+                    if !self.tablero_visible[i as usize][j as usize]{
+                        resultado.push((i as u8, j as u8, self.tablero[fila][columna]));
+                    }
+                }
+            }
         }
 
         resultado

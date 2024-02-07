@@ -82,17 +82,35 @@ fn jugar(stream: &mut TcpStream, tablero: &mut buscaminas::Tablero){
                     terminado=true;
                 }
 
-                let fila = buffer[0] as i8;
-                if fila==-1{
+                let opcion = buffer[0] as i8;
+
+                if opcion==-1{
                     terminado=true;
                 }else{
-                    let fila = fila as usize;
+                    let fila = buffer[1] as u8 as usize;
+                    let columna = buffer[2] as u8 as usize;
 
-                    let columna = buffer[1] as i8 as usize;
-                    let accion = buffer[2] as i8;
+                    if opcion==0{
+                        let casillasDescubiertas=tablero.descubrir_casilla(fila, columna);
 
-                    if accion==0{
-                        tablero.descubrir_casilla(fila, columna);
+                        let numEnvios=[casillasDescubiertas.len() as u8];
+                        stream.write(&numEnvios);
+
+                        for infoCasilla in casillasDescubiertas{
+                            let fila:u8;
+                            let columna:u8;
+                            let valor:i8;
+                            (fila, columna, valor)=infoCasilla;
+                            stream.write(&[fila]);
+                            stream.write(&[columna]);
+                            let valor: u8 = if valor>=0 {valor as u8} else {255};
+                            stream.write(&[valor]);
+                        }
+
+                        #[cfg(debug_assertions)]
+                        println!("{}", tablero)
+                    }else{
+                        //TODO poner bandera
                     }
                 }
             }
