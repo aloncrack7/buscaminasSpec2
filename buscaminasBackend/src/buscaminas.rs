@@ -43,7 +43,6 @@ impl Tablero{
             estado: EstadoPartida::SinIniciar,
         };
         tablero.generar_tablero();
-        tablero.generar_minas_cercanas();
 
         tablero
     }
@@ -104,55 +103,23 @@ impl Tablero{
         self.estado = EstadoPartida::Jugando;
 
         if self.tablero[fila][columna] == -1{
-            let mut contador: i8=0;
-            for i in -1..2{
-                for j in -1..2{
-                    if i!=0 || j!=0{
-                        let fila: isize = (fila as isize)+i;
-                        let columna: isize = (columna as isize)+j;
+            self.tablero[fila][columna] = 0;
 
-                        if fila>=0 && fila<self.filas && columna>=0 && columna<self.columnas{
-                            if self.tablero[fila as usize][columna as usize]!=-1{
-                                self.tablero[fila as usize][columna as usize]-=1;
-                            }else{
-                                contador+=1;
-                            }
-                        }
-                    }
+            let mut colocado=false;
+            while !colocado {
+                let mut rng = rand::thread_rng();
+                let filaAntes=fila;
+                let fila = rng.gen_range(0..self.filas) as usize;
+                let columnaAntes=columna;
+                let columna = rng.gen_range(0..self.columnas) as usize;
+                if (fila!=filaAntes && columna!=columnaAntes) && self.tablero[fila][columna]!=-1{
+                    colocado=true;
+                    self.tablero[fila][columna] = -1;
                 }
             }
-
-            self.tablero[fila][columna]=contador;
         }
 
-        let mut colocado=false;
-        while !colocado {
-            let mut rng = rand::thread_rng();
-            let filaAntes=fila;
-            let fila = rng.gen_range(0..self.filas) as usize;
-            let columnaAntes=columna;
-            let columna = rng.gen_range(0..self.columnas) as usize;
-            if (fila!=filaAntes && columna!=columnaAntes) && self.tablero[fila][columna]!=-1{
-                colocado=true;
-
-                self.tablero[fila][columna] = -1;
-
-                for i in -1..2{
-                    for j in -1..2{
-                        if i!=0 || j!=0{
-                            let fila: isize = (fila as isize)+i;
-                            let columna: isize = (columna as isize)+j;
-
-                            if fila>=0 && fila<self.filas && columna>=0 && columna<self.columnas{
-                                if self.tablero[fila as usize][columna as usize]!=-1{
-                                    self.tablero[fila as usize][columna as usize]+=1;
-                                }
-                            }
-                        }
-                    }
-                } 
-            }
-        }
+        self.generar_minas_cercanas();
     }
 
     fn hacer_visible(&mut self, fila: usize, columna: usize) -> Vec<(u8, u8, i8)>{
