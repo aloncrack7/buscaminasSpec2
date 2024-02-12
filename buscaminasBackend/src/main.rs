@@ -5,11 +5,18 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use actix_web::{get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use rand::seq::index;
+use std::str::FromStr;
 
 mod buscaminas;
 
 struct AppState{
     tableros: Mutex<HashMap<String, buscaminas::Tablero>>
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+enum Opcion{
+    Seleccionar=0,
+    Bandera=1,
 }
 
 fn obtenerCliente(req: &HttpRequest) -> String{
@@ -72,23 +79,22 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
     }
     let mut tablero = tableros.get_mut(&cliente).unwrap();
 
-    if let Some(opcion) = web::Query::<HashMap<String, String>>::from_query(req.query_string())
-        .ok()
-        .map(|query| query.get("opcion").and_then(|c| c.parse::<i32>().ok())) {
+    if let Some(opcion) = 
+        web::Query::<HashMap<String, String>>::from_query(req.query_string())
+            .ok()
+            .and_then(|query| query.get("opcion"))
+            .map(|o| o.as_str()) {
         match opcion {
-            Some(-1) => {
-                // salir
-                let response = "Saliendo...";
-                return HttpResponse::Ok().body(response);
-            }
-            Some(0) => {
+            "seleccionar" => {
                 if let (Some(fila), Some(columna)) = (
                     web::Query::<HashMap<String, String>>::from_query(req.query_string())
                         .ok()
-                        .map(|query| query.get("fila").and_then(|f| f.parse::<usize>().ok())),
+                        .map(|query| query.get("fila")
+                        .and_then(|f| f.parse::<usize>().ok())),
                     web::Query::<HashMap<String, String>>::from_query(req.query_string())
                         .ok()
-                        .map(|query| query.get("columna").and_then(|c| c.parse::<usize>().ok())),
+                        .map(|query| query.get("columna")
+                        .and_then(|c| c.parse::<usize>().ok())),
                 ) {
                     let casillas_descubiertas = tablero.descubrir_casilla(fila.unwrap(), columna.unwrap());
 
@@ -102,7 +108,7 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
                     return HttpResponse::PreconditionFailed().body("Error: Missing 'fila' or 'columna' parameter.");
                 }
             }
-            Some(1) => {
+            "bandera" => {
                 // poner bandera
                 let response = "Poniendo bandera...";
                 return HttpResponse::Ok().body(response);
@@ -116,6 +122,19 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
     }
 }
 
+async fn salir(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Responder {
+    println!("Salir");
+
+    let cliente = obtenerCliente(&req);
+    let mut tableros = data.tableros.lock().unwrap();
+
+    if !tableros.contains_key(&cliente) {
+        return HttpResponse::PreconditionFailed().body("Error: El cliente no tiene ningun tablero inicilizado");
+    }
+    tableros.remove(&cliente);
+
+    HttpResponse::Ok().body("Saliendo...")
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()>{
@@ -132,5 +151,6 @@ async fn main() -> std::io::Result<()>{
             .service(web::resource("/dificil").to(dificil))
             .service(web::resource("/ia").to(ia))
             .service(web::resource("/jugar").to(jugar))
+            .service(web::resource("/salir").to(salir))
     }).bind(("127.0.0.1", 7070))?.run().await
 }
