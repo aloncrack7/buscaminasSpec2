@@ -1,5 +1,5 @@
 import tkinter as tk
-import socket
+import requests
 from enum import Enum
 
 class Opciones(Enum):
@@ -12,9 +12,9 @@ class Opciones(Enum):
         return self.value.to_bytes(1, byteorder='big', signed=True)
 
 class Gui:
-    def __init__(self, socket):
+    def __init__(self):
         self.window = tk.Tk()
-        self.socketCliente=socket
+        self.base_url = "http://localhost:7070"
         self.buttons=[]
 
         self.difficultyWindow()
@@ -38,20 +38,31 @@ class Gui:
 
 
     def medio(self):
-        self.socketCliente.send(Opciones.MEDIO.encodeOption())
-        self.createBoard(16, 16)
+        if requests.get(f"{self.base_url}/medio").status_code == 200:
+            self.createBoard(16, 16)
+            print("Conectado al servidor")
+        else:
+            print("No se pudo conectar al servidor")
         
     def dificil(self):
-        self.socketCliente.send(Opciones.DIFICIL.encodeOption())
-        self.createBoard(30, 16)
+        if requests.get(f"{self.base_url}/dificil").status_code == 200:
+            self.createBoard(30, 16)
+            print("Conectado al servidor")
+        else:
+            print("No se pudo conectar al servidor")
         
     def ia(self):
-        self.socketCliente.send(Opciones.IA.encodeOption()) 
-        self.createBoard(30, 16)
+        if requests.get(f"{self.base_url}/ia").status_code == 200:
+            self.createBoard(30, 16)
+            print("Conectado al servidor")
+        else:
+            print("No se pudo conectar al servidor")
 
     def on_closing(self):
-        self.socketCliente.send(Opciones.SALIR.encodeOption())  
-        self.window.destroy()
+        if requests.get(f"{self.base_url}/salir").status_code == 200:
+            self.window.destroy()
+        else:
+            print("No se pudo conectar al servidor")  
     
     def createBoard(self, numFilas, numColumnas):
         # Cerrar la ventana de selección de dificultad
@@ -78,32 +89,34 @@ class Gui:
 
     def button_click(self, row, col):
         print(f"Botón izquierdo en la posición ({row}, {col})")
-        opcion=0
-        self.socketCliente.send(opcion.to_bytes(1, byteorder='big', signed=True))
-        self.socketCliente.send(row.to_bytes(1, byteorder='big', signed=False))
-        self.socketCliente.send(col.to_bytes(1, byteorder='big', signed=False))
+        payload = {"fila": row, "columna": col, "opcion": "seleccionar"}
 
-        numDescubiertos=int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=False)
-        print(f"numDescubiertos: {numDescubiertos}")
+        response = requests.get(f"{self.base_url}/jugar", params=payload)
+        
+        if response.status_code == 200:
+            data = response.json()
+            for casilla in data:
+                fila = int(casilla[0])
+                columna = int(casilla[1])
+                valor = casilla[2]
 
-        for i in range(0, numDescubiertos):
-            fila = int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=False)
-            columna = int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=False)
-            valor = int.from_bytes(self.socketCliente.recv(1), byteorder='big', signed=True)
-
-            self.buttons[fila][columna]['text']=str(valor)
-
-            print(f"Fila: {fila}")
-            print(f"Columna: {columna}")
-            print(f"Valor: {valor}")
+                self.buttons[fila][columna]['text']=str(valor)
+        else:
+            print("No se pudo conectar al servidor")
 
     def right_click(self, event, row, col):
         print(f"Botón derecho en la posición ({row}, {col})")
-        opcion=1
-        self.socketCliente.send(opcion.to_bytes(1, byteorder='big', signed=True))
-        self.socketCliente.send(row.to_bytes(1, byteorder='big', signed=False))
-        self.socketCliente.send(col.to_bytes(1, byteorder='big', signed=False))
+        payload = {"fila": row, "columna": col, "opcion": "bandera"}
+
+        response = requests.post(f"{self.base_url}/jugar", params=payload)
+        
+        if response.status_code == 200:
+            print("Bandera puesta")
+        else:
+            print("No se pudo conectar al servidor")
 
     def on_game_window_closing(self):
-        self.socketCliente.send(Opciones.SALIR.encodeOption())  
-        self.game_window.destroy()
+        if requests.get(f"{self.base_url}/salir").status_code == 200:
+            self.game_window.destroy()
+        else:
+            print("No se pudo conectar al servidor") 

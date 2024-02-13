@@ -1,11 +1,6 @@
 use std::collections::HashMap;
-use std::net::{TcpListener, TcpStream};
-use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
-use std::thread;
 use actix_web::{get, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
-use rand::seq::index;
-use std::str::FromStr;
 
 mod buscaminas;
 
@@ -82,9 +77,8 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
     if let Some(opcion) = 
         web::Query::<HashMap<String, String>>::from_query(req.query_string())
             .ok()
-            .and_then(|query| query.get("opcion"))
-            .map(|o| o.as_str()) {
-        match opcion {
+            .and_then(|query| query.get("opcion").cloned()){
+        match opcion.as_str() {
             "seleccionar" => {
                 if let (Some(fila), Some(columna)) = (
                     web::Query::<HashMap<String, String>>::from_query(req.query_string())
@@ -98,12 +92,7 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
                 ) {
                     let casillas_descubiertas = tablero.descubrir_casilla(fila.unwrap(), columna.unwrap());
 
-                    let response = format!(
-                        "Descubriendo... Casillas descubiertas: {:?}",
-                        casillas_descubiertas
-                    );
-
-                    return HttpResponse::Ok().body(response);
+                    return HttpResponse::Ok().json(casillas_descubiertas);
                 } else {
                     return HttpResponse::PreconditionFailed().body("Error: Missing 'fila' or 'columna' parameter.");
                 }
