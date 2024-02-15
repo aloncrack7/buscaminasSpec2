@@ -81,6 +81,7 @@ class Gui:
                 btn = tk.Button(btns_frame, width=2, height=1, command=lambda fila=i, columna=j: self.button_click(fila, columna))
                 btn.grid(row=i+1, column=j)
                 btn.bind("<Button-3>", lambda event, fila=i, columna=j: self.right_click(event, fila, columna)) 
+                btn['text'] = ""
                 row_buttons.append(btn)
             self.buttons.append(row_buttons)
 
@@ -88,32 +89,37 @@ class Gui:
         self.game_window.mainloop()
 
     def button_click(self, row, col):
-        print(f"Botón izquierdo en la posición ({row}, {col})")
-        payload = {"fila": row, "columna": col, "opcion": "seleccionar"}
+        if self.buttons[row][col]['text']=="":
+            print(f"Botón izquierdo en la posición ({row}, {col})")
+            payload = {"fila": row, "columna": col, "opcion": "seleccionar"}
 
-        response = requests.get(f"{self.base_url}/jugar", params=payload)
-        
-        if response.status_code == 200:
-            data = response.json()
-            for casilla in data:
-                fila = int(casilla[0])
-                columna = int(casilla[1])
-                valor = casilla[2]
+            response = requests.get(f"{self.base_url}/jugar", params=payload)
+            
+            if response.status_code == 200:
+                data = response.json()
+                for casilla in data:
+                    fila = int(casilla[0])
+                    columna = int(casilla[1])
+                    valor = casilla[2]
 
-                self.buttons[fila][columna]['text']=str(valor)
-        else:
-            print("No se pudo conectar al servidor")
+                    if not(self.buttons[fila][columna]['text']=='🚩' and valor==-1):
+                        self.buttons[fila][columna]['text']=str(valor)
+            else:
+                print("No se pudo conectar al servidor")
 
     def right_click(self, event, row, col):
-        print(f"Botón derecho en la posición ({row}, {col})")
-        payload = {"fila": row, "columna": col, "opcion": "bandera"}
+        if self.buttons[row][col]['text']=="🚩" or self.buttons[row][col]['text']=="":
+            print(f"Botón derecho en la posición ({row}, {col})")
+            payload = {"fila": row, "columna": col, "opcion": "bandera"}
 
-        response = requests.post(f"{self.base_url}/jugar", params=payload)
-        
-        if response.status_code == 200:
-            print("Bandera puesta")
-        else:
-            print("No se pudo conectar al servidor")
+            response = requests.post(f"{self.base_url}/jugar", params=payload)
+            
+            self.buttons[row][col]['text']="🚩" if self.buttons[row][col]['text']!="🚩" else ""
+            
+            if response.status_code == 200:
+                print("Bandera puesta")
+            else:
+                print("No se pudo conectar al servidor")
 
     def on_game_window_closing(self):
         if requests.get(f"{self.base_url}/salir").status_code == 200:

@@ -146,8 +146,6 @@ impl Tablero{
                 }
             }
         }else if self.estado.eq(&EstadoPartida::Perdida){
-            let mut resultado: Vec<(u8, u8, i8)>=vec![];
-
             for i in 0..self.filas{
                 for j in 0..self.columnas{
                     if !self.tablero_visible[i as usize][j as usize]{
