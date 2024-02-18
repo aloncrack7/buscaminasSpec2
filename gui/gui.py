@@ -89,7 +89,7 @@ class Gui:
         self.game_window.mainloop()
 
     def button_click(self, row, col):
-        if self.buttons[row][col]['text']=="":
+        if self.buttons[row][col]['text']=="" or self.buttons[row][col]['text']==" ":
             print(f"Botón izquierdo en la posición ({row}, {col})")
             payload = {"fila": row, "columna": col, "opcion": "seleccionar"}
 
@@ -102,8 +102,47 @@ class Gui:
                     columna = int(casilla[1])
                     valor = casilla[2]
 
-                    if not(self.buttons[fila][columna]['text']=='🚩' and valor==-1):
+                    if valor == -1:
+                        if self.buttons[fila][columna]['text']!="🚩":
+                            self.buttons[fila][columna]['text']="💣"
+                            
+                            if fila==row and columna==col:
+                                self.buttons[fila][columna]['foreground']='black'
+                                self.buttons[fila][columna]['background']='red'
+                            else:
+                                self.buttons[fila][columna]['foreground']='black'
+                                self.buttons[fila][columna]['background']='white'
+                            self.buttons[fila][columna].config(state="disabled")
+                    elif valor == 0:
+                        self.buttons[fila][columna]['text']=" "
+                        self.buttons[fila][columna]['foreground']='white'
+                        self.buttons[fila][columna]['background']='light gray'
+                        self.buttons[fila][columna].config(state="disabled")
+                    else:
                         self.buttons[fila][columna]['text']=str(valor)
+                        if valor==1:
+                            color='blue'
+                        elif valor==2:
+                            color='green'
+                        elif valor==3:
+                            color='red'
+                        elif valor==4:
+                            color='dark blue'
+                        elif valor==5:        
+                            color='dark red'
+                        elif valor==6:
+                            color='cyan'
+                        elif valor==7:
+                            color='black'
+                        elif valor==8:
+                            color='light grey'
+                        else:
+                            color='black'
+                        self.buttons[fila][columna]['foreground']='black'
+                        self.buttons[fila][columna]['background']=color
+                        self.buttons[fila][columna].config(state="disabled")    
+                        
+                        
             else:
                 print("No se pudo conectar al servidor")
 
@@ -114,7 +153,14 @@ class Gui:
 
             response = requests.post(f"{self.base_url}/jugar", params=payload)
             
-            self.buttons[row][col]['text']="🚩" if self.buttons[row][col]['text']!="🚩" else ""
+            if self.buttons[row][col]['text']!="🚩":
+                self.buttons[row][col]['foreground']='black'
+                self.buttons[row][col]['background']='red'
+                self.buttons[row][col]['text']="🚩"
+            else:
+                self.buttons[row][col]['foreground']='black'
+                self.buttons[row][col]['background']='white'
+                self.buttons[row][col]['text']=" "
             
             if response.status_code == 200:
                 print("Bandera puesta")
