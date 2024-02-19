@@ -214,4 +214,23 @@ impl Tablero{
 
         return vec![];
     }
+
+    pub fn getTableroVisible(&self) -> Vec<Vec<i8>>{
+        let mut tablero = vec![];
+        for i in 0..self.filas{
+            let mut fila = vec![];
+            for j in 0..self.columnas{
+                if self.tablero_visible[i as usize][j as usize]{
+                    fila.push(self.tablero[i as usize][j as usize]);
+                }else if self.banderas[i as usize][j as usize]{
+                    fila.push(-1);
+                }else {
+                    fila.push(-2);
+                }
+            }
+            tablero.push(fila);
+        }
+
+        tablero
+    }
 }

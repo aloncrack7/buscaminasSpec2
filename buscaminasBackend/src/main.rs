@@ -60,6 +60,8 @@ async fn ia(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Responder{
 
     let mut tablero=buscaminas::Tablero::new(16, 16, 40);
 
+    //Gestionar IA
+
     format!("IA, {}", cliente)
 }
  
