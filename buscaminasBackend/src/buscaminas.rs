@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::{collections::HashSet, result};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub enum EstadoPartida{
@@ -14,6 +15,7 @@ pub struct Tablero{
     minas: i32,
     tablero: Vec<Vec<i8>>,
     tablero_visible: Vec<Vec<bool>>,
+    banderas: Vec<Vec<bool>>,
     casillas_descubiertas: i32,
     estado: EstadoPartida,
 }
@@ -39,6 +41,7 @@ impl Tablero{
             minas: minas,
             tablero: vec![vec![0; columnas]; filas],
             tablero_visible: vec![vec![false; columnas]; filas],
+            banderas: vec![vec![false; columnas]; filas],
             casillas_descubiertas: 0,
             estado: EstadoPartida::SinIniciar,
         };
@@ -168,5 +171,47 @@ impl Tablero{
         }
 
         resultado
+    }
+
+    pub fn poner_bandera(&mut self, fila: usize, columna: usize){
+        self.banderas[fila][columna] = !self.banderas[fila][columna];
+    }
+
+    pub fn descubrirCasillas(&mut self, fila: usize, columna: usize) -> Vec<(u8, u8, i8)>{
+        if self.tablero_visible[fila][columna]{
+            let mut casillasADescubrir=vec![];
+            let mut contadorBanderas=0;
+
+            for i in -1..2{
+                for j in -1..2{
+                    if i!=0 || j!=0{
+                        let fila: isize = (fila as isize)+i;
+                        let columna: isize = (columna as isize)+j;
+
+                        if fila>=0 && fila<self.filas && columna>=0 && columna<self.columnas{
+                            if self.banderas[fila as usize][columna as usize]{
+                                contadorBanderas+=1;
+                            }else if !self.tablero_visible[fila as usize][columna as usize]{
+                                casillasADescubrir.push((fila as usize, columna as usize));
+                            }
+                        }
+                    }
+                }
+            }
+
+            let mut resultado=vec![];
+            if contadorBanderas==self.tablero[fila][columna]{
+                for (fila, columna) in casillasADescubrir{
+                    if self.tablero[fila][columna]==-1{
+                        self.estado=EstadoPartida::Perdida;
+                    }
+                    resultado.append(&mut self.hacer_visible(fila, columna));
+                }
+            }
+
+            return resultado;
+        }
+
+        return vec![];
     }
 }

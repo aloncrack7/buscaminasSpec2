@@ -36,7 +36,6 @@ class Gui:
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)  # Bind the function to window close event
         self.window.mainloop()
 
-
     def medio(self):
         if requests.get(f"{self.base_url}/medio").status_code == 200:
             self.createBoard(16, 16)
@@ -81,6 +80,7 @@ class Gui:
                 btn = tk.Button(btns_frame, width=2, height=1, command=lambda fila=i, columna=j: self.button_click(fila, columna))
                 btn.grid(row=i+1, column=j)
                 btn.bind("<Button-3>", lambda event, fila=i, columna=j: self.right_click(event, fila, columna)) 
+                btn.bind("<Button-2>", lambda event, fila=i, columna=j: self.center_click(event, fila, columna))
                 btn['text'] = ""
                 row_buttons.append(btn)
             self.buttons.append(row_buttons)
@@ -112,11 +112,90 @@ class Gui:
                             else:
                                 self.buttons[fila][columna]['foreground']='black'
                                 self.buttons[fila][columna]['background']='white'
+                            # self.buttons[fila][columna].config(state="disabled")
+                    elif valor == 0:
+                        self.buttons[fila][columna]['text']=" "
+                        self.buttons[fila][columna]['foreground']='white'
+                        self.buttons[fila][columna]['background']='dark gray'
+                        # self.buttons[fila][columna].config(state="disabled")
+                    else:
+                        self.buttons[fila][columna]['text']=str(valor)
+                        if valor==1:
+                            color='blue'
+                        elif valor==2:
+                            color='green'
+                        elif valor==3:
+                            color='red'
+                        elif valor==4:
+                            color='dark blue'
+                        elif valor==5:        
+                            color='dark red'
+                        elif valor==6:
+                            color='cyan'
+                        elif valor==7:
+                            color='black'
+                        elif valor==8:
+                            color='light grey'
+                        else:
+                            color='black'
+                        self.buttons[fila][columna]['foreground']='black'
+                        self.buttons[fila][columna]['background']=color
+                        # self.buttons[fila][columna].config(state="disabled")    
+                        
+            else:
+                print("No se pudo conectar al servidor")
+
+    def right_click(self, _, row, col):
+        if self.buttons[row][col]['text']=="🚩" or self.buttons[row][col]['text']=="":
+            print(f"Botón derecho en la posición ({row}, {col})")
+            payload = {"fila": row, "columna": col, "opcion": "bandera"}
+
+            response = requests.post(f"{self.base_url}/jugar", params=payload)
+            
+            if self.buttons[row][col]['text']!="🚩":
+                self.buttons[row][col]['foreground']='black'
+                self.buttons[row][col]['background']='red'
+                self.buttons[row][col]['text']="🚩"
+            else:
+                self.buttons[row][col]['foreground']='black'
+                self.buttons[row][col]['background']='white'
+                self.buttons[row][col]['text']=" "
+            
+            if response.status_code == 200:
+                print("Bandera puesta")
+            else:
+                print("No se pudo conectar al servidor")
+                
+    def center_click(self, _, row, col):
+        print(f"Botón central en la posición ({row}, {col})")
+        if self.buttons[row][col]['text']!="" or self.buttons[row][col]['text']!=" " \
+            and self.buttons[row][col]['text']!="🚩":
+            print(f"Botón central en la posición ({row}, {col})")
+            payload = {"fila": row, "columna": col, "opcion": "seleccionarVarios"}
+
+            response = requests.get(f"{self.base_url}/jugar", params=payload)
+            
+            if response.status_code == 200:
+                data = response.json()
+                for casilla in data:
+                    fila = int(casilla[0])
+                    columna = int(casilla[1])
+                    valor = casilla[2]
+
+                    if valor == -1:
+                        if self.buttons[fila][columna]['text']!="🚩":
+                            self.buttons[fila][columna]['text']="💣"                           
+                            if fila==row and columna==col:
+                                self.buttons[fila][columna]['foreground']='black'
+                                self.buttons[fila][columna]['background']='red'
+                            else:
+                                self.buttons[fila][columna]['foreground']='black'
+                                self.buttons[fila][columna]['background']='white'
                             self.buttons[fila][columna].config(state="disabled")
                     elif valor == 0:
                         self.buttons[fila][columna]['text']=" "
                         self.buttons[fila][columna]['foreground']='white'
-                        self.buttons[fila][columna]['background']='light gray'
+                        self.buttons[fila][columna]['background']='dark gray'
                         self.buttons[fila][columna].config(state="disabled")
                     else:
                         self.buttons[fila][columna]['text']=str(valor)
@@ -142,28 +221,6 @@ class Gui:
                         self.buttons[fila][columna]['background']=color
                         self.buttons[fila][columna].config(state="disabled")    
                         
-                        
-            else:
-                print("No se pudo conectar al servidor")
-
-    def right_click(self, event, row, col):
-        if self.buttons[row][col]['text']=="🚩" or self.buttons[row][col]['text']=="":
-            print(f"Botón derecho en la posición ({row}, {col})")
-            payload = {"fila": row, "columna": col, "opcion": "bandera"}
-
-            response = requests.post(f"{self.base_url}/jugar", params=payload)
-            
-            if self.buttons[row][col]['text']!="🚩":
-                self.buttons[row][col]['foreground']='black'
-                self.buttons[row][col]['background']='red'
-                self.buttons[row][col]['text']="🚩"
-            else:
-                self.buttons[row][col]['foreground']='black'
-                self.buttons[row][col]['background']='white'
-                self.buttons[row][col]['text']=" "
-            
-            if response.status_code == 200:
-                print("Bandera puesta")
             else:
                 print("No se pudo conectar al servidor")
 

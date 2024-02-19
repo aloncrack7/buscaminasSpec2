@@ -80,18 +80,18 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
             .and_then(|query| query.get("opcion").cloned()){
         match opcion.as_str() {
             "seleccionar" => {
-                if let (Some(fila), Some(columna)) = (
-                    web::Query::<HashMap<String, String>>::from_query(req.query_string())
-                        .ok()
-                        .map(|query| query.get("fila")
-                        .and_then(|f| f.parse::<usize>().ok())),
-                    web::Query::<HashMap<String, String>>::from_query(req.query_string())
-                        .ok()
-                        .map(|query| query.get("columna")
-                        .and_then(|c| c.parse::<usize>().ok())),
-                ) {
-                    let casillas_descubiertas = tablero.descubrir_casilla(fila.unwrap(), columna.unwrap());
-
+                if let (Some(fila), Some(columna)) = 
+                    (obtener_parametro(&req, "fila"), obtener_parametro(&req, "columna")) {
+                    let casillas_descubiertas = tablero.descubrir_casilla(fila, columna);
+                    return HttpResponse::Ok().json(casillas_descubiertas);
+                } else {
+                    return HttpResponse::PreconditionFailed().body("Error: Missing 'fila' or 'columna' parameter.");
+                }
+            }
+            "seleccionarVarios" => {
+                if let (Some(fila), Some(columna)) = 
+                    (obtener_parametro(&req, "fila"), obtener_parametro(&req, "columna")) {
+                    let casillas_descubiertas = tablero.descubrirCasillas(fila, columna);
                     return HttpResponse::Ok().json(casillas_descubiertas);
                 } else {
                     return HttpResponse::PreconditionFailed().body("Error: Missing 'fila' or 'columna' parameter.");
@@ -100,7 +100,14 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
             "bandera" => {
                 // poner bandera
                 let response = "Poniendo bandera...";
-                return HttpResponse::Ok().body(response);
+
+                if let (Some(fila), Some(columna)) = (obtener_parametro(&req, "fila"), obtener_parametro(&req, "columna")) {
+                    tablero.poner_bandera(fila, columna);
+
+                    return HttpResponse::Ok().body(response);
+                } else {
+                    return HttpResponse::PreconditionFailed().body("Error: Missing 'fila' or 'columna' parameter.");
+                }
             }
             _ => {
                 return HttpResponse::PreconditionFailed().body("Error: Invalid option.");
@@ -109,6 +116,13 @@ async fn jugar(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Respond
     } else {
         return HttpResponse::PreconditionFailed().body("Error: Invalid option.");
     }
+}
+
+fn obtener_parametro(req: &HttpRequest, parametro: &str) -> Option<usize> {
+    web::Query::<HashMap<String, String>>::from_query(req.query_string())
+        .ok()
+        .and_then(|query| query.get(parametro)
+        .and_then(|p| p.parse::<usize>().ok()))
 }
 
 async fn salir(data: web::Data<Arc<AppState>>, req: HttpRequest) -> impl Responder {
