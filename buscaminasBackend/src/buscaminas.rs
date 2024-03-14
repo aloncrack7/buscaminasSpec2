@@ -17,7 +17,7 @@ pub struct Tablero{
     tablero_visible: Vec<Vec<bool>>,
     banderas: Vec<Vec<bool>>,
     casillas_descubiertas: i32,
-    estado: EstadoPartida,
+    estado: EstadoPartida
 }
 
 impl std::fmt::Display for Tablero {
@@ -34,7 +34,7 @@ impl std::fmt::Display for Tablero {
 }
 
 impl Tablero{
-    pub fn new(filas: usize, columnas: usize, minas: i32) -> Self{
+    pub fn new(filas: usize, columnas: usize, minas: i32, esIA: bool) -> Self{
         let mut tablero = Tablero{
             filas: filas as isize,
             columnas: columnas as isize,
@@ -43,7 +43,7 @@ impl Tablero{
             tablero_visible: vec![vec![false; columnas]; filas],
             banderas: vec![vec![false; columnas]; filas],
             casillas_descubiertas: 0,
-            estado: EstadoPartida::SinIniciar,
+            estado: EstadoPartida::SinIniciar
         };
         tablero.generar_tablero();
 

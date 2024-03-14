@@ -1,4 +1,4 @@
-struct TabeleroInterno {
+pub struct TabeleroInterno {
     filas: isize,
     columnas: isize,
     tablero: Vec<Vec<i8>>,
@@ -6,7 +6,7 @@ struct TabeleroInterno {
 }
 
 impl TabeleroInterno {
-    fn new(filas: usize, columnas: usize, tablero_visible: Vec<Vec<i8>>, buscaminas: buscaminas::Tablero) -> TabeleroInterno {
+    pub fn new(filas: usize, columnas: usize, tablero_visible: Vec<Vec<i8>>, buscaminas: buscaminas::Tablero) -> TabeleroInterno {
         let mut tablero = vec![];
         for i in 0..filas {
             let mut fila = vec![];
@@ -22,6 +22,10 @@ impl TabeleroInterno {
             tablero,
             buscaminas
         }
+    }
+
+    pub fn getTablero(&self) -> &Vec<Vec<i8>> {
+        &self.tablero
     }
 
     pub fn nextMove(&self) -> Vec<(usize, usize, i8)> {
